@@ -1,0 +1,2 @@
+162c5dcb9648b1a73063b12f71a8577ccd1a66db6efe5cc3cbb76ed14cb3895b  SupervisionViewer.exe
+ec7f5de0546866548243d49d213384fe20589a36e503ba5abcde98c80a796cf6  SupervisionCapture.uf2

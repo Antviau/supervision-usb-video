@@ -1,0 +1,40 @@
+.program supervision_capture
+
+; GP16..GP21 are sampled as one six-bit value:
+; DATA0..DATA3, PIXEL_CLOCK, FRAME_POLARITY. Recording polarity with every
+; pixel group lets the CPU find the exact field boundary and recover from a
+; malformed field instead of accumulating horizontal drift.
+public start:
+    wait 0 gpio 21
+    wait 1 gpio 21
+
+.wrap_target
+    wait 0 gpio 20
+    wait 1 gpio 20
+    in pins, 6
+.wrap
+
+.program supervision_capture_line_sync
+
+; Same captured format, with LCD pin 7 (LINE_LATCH) connected to GP22.
+; Exactly 40 four-pixel groups are accepted per row; the state machine then
+; waits for the real line-latch pulse before starting the next row. This limits
+; any clock glitch to one row instead of letting it skew the rest of the image.
+public start:
+    wait 0 gpio 21
+    wait 1 gpio 21
+
+.wrap_target
+    set x, 19
+pixel_pair:
+    wait 0 gpio 20
+    wait 1 gpio 20
+    in pins, 6
+    wait 0 gpio 20
+    wait 1 gpio 20
+    in pins, 6
+    jmp x-- pixel_pair
+    wait 1 gpio 22
+    wait 0 gpio 22
+.wrap
+

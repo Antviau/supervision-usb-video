@@ -1,0 +1,23 @@
+; Finite sampling prevents FIFO stalls after DMA completion being mistaken
+; for stalls during capture. Two PIO instructions per sample in both modes.
+.program supervision_timing_probe
+    pull block
+    mov x, osr
+    wait 0 gpio 21
+    wait 1 gpio 21
+sample:
+    in pins, 3
+    jmp x-- sample
+stop:
+    jmp stop
+
+.program supervision_data_probe
+    pull block
+    mov x, osr
+    wait 0 gpio 21
+    wait 1 gpio 21
+sample:
+    in pins, 8
+    jmp x-- sample
+stop:
+    jmp stop
