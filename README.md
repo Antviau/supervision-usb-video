@@ -13,13 +13,13 @@ HDMI adapter, USB webcam/UVC device, or audio capture device.
 
 ## Screenshots
 
-Actual screenshots of the accepted Windows viewer, not mockups or generated
-images. The two shots were captured at different game moments. Game graphics
+Screenshots of the Windows viewer in use. The two shots were captured at
+different game moments. Game graphics
 remain the property of their respective owners; no ROM is distributed.
 
-![Accepted viewer in its green palette](docs/images/viewer-green.jpg)
+![Windows viewer in its green palette](docs/images/viewer-green.jpg)
 
-![Accepted viewer in its neutral grayscale palette](docs/images/viewer-gray.jpg)
+![Windows viewer in its neutral grayscale palette](docs/images/viewer-gray.jpg)
 
 ## AI-assisted development
 
@@ -31,17 +31,15 @@ a claim that the code is error-free or independently verified.
 
 ## First release: v0.1.0
 
-This release preserves the accepted, responsive, blackout-free viewer and its
-matching firmware. It does **not** include the later DXGI or independent GDI
-render-worker experiments as its runtime.
+The release includes two components: firmware that captures the console's
+LCD signals on the Pico, and a Windows application that displays the video
+received over USB. You continue playing with the console's own controls.
 
 - 160 x 160 image, four grayscale levels, green or neutral palette.
-- About 50.815 raw USB packets/second observed on the tested console.
-- Three chronological LCD fields combined for grayscale, updated once per
-  received field pair; the two transported fields are not weighted gray bits.
-- Small USB reads and latest-frame presentation for low application latency.
-- Completed off-screen GDI composition prevents the previously observed
-  whole-window black clears; real dark game frames are not suppressed.
+- Approximately 50.8 video updates per second on the tested console.
+- Four shades reconstructed from successive LCD fields (partial image scans).
+- Low-latency USB capture with latest-frame display.
+- Buffered drawing: the viewer prepares each image before displaying it.
 - Borderless fullscreen, native-resolution PNG screenshots, raw `.svf` recording.
 
 ### Known limitations
@@ -60,8 +58,9 @@ Pi Pico/RP2040, a USB **data** cable, and a working Supervision motherboard
 producing its LCD signals. A working original LCD is not required. This release
 does not target Pico 2/RP2350, Linux/macOS, or Windows ARM64. You need soldering
 equipment and a way to verify wiring/voltage levels. No Python, Pico SDK, Visual
-Studio, or administrator privileges are normally needed to run the viewer;
-manual driver installation may require administrator approval.
+Studio, or administrator privileges are normally needed to run the viewer.
+**Zadig is required to install the WinUSB driver**, and that setup step requires
+administrator approval. Zadig is downloaded separately, not bundled.
 
 ## Download and install — step by step
 
@@ -71,14 +70,15 @@ manual driver installation may require administrator approval.
    not the ready-to-run viewer.
 3. Extract the ZIP to a writable folder, e.g. a folder under Documents. Do not
    run the viewer from inside the ZIP. Keep the documentation and licenses.
-4. Follow the wiring, Pico flashing, and driver steps below. If this exact
-   firmware already works on your Pico, skip flashing.
-5. Run `SupervisionViewer.exe` and turn on the console.
+4. Complete the wiring and flash `SupervisionCapture.uf2` as described below.
+   If this release's firmware is already installed, skip flashing.
+5. **Install WinUSB with Zadig** using the required driver setup below.
+6. Run `SupervisionViewer.exe` and turn on the console.
 
 The package contains:
 
-- `SupervisionViewer.exe`: the exact accepted Windows x64 binary.
-- `SupervisionCapture.uf2`: the exact matching RP2040 firmware.
+- `SupervisionViewer.exe`: the Windows x64 viewing application.
+- `SupervisionCapture.uf2`: the matching RP2040 capture firmware.
 - Instructions, release notes, licenses, and SHA256 checksums.
 
 ### Flash a new Pico
@@ -89,25 +89,27 @@ The package contains:
 3. Copy the packaged **`SupervisionCapture.uf2`** onto that drive.
 4. The bootloader drive disappears when flashing completes. The Pico should
    reconnect as the capture device, not remain a storage drive.
-5. Wait for Windows to finish device setup before opening the viewer.
+5. Continue with the required Zadig driver installation below before opening
+   the viewer.
 
-This replaces the firmware currently loaded on that Pico. Do not use one of
-the diagnostic/six-wire artifacts in the source tree. BOOTSEL flashing does
-not depend on the application firmware remaining responsive.
+This replaces the firmware currently loaded on that Pico. Use the UF2 from
+the Windows release package. BOOTSEL flashing does not depend on the
+application firmware remaining responsive.
 
-### Windows driver setup
+### Required Windows driver setup — Zadig
 
-The firmware exposes a vendor-specific WinUSB interface, not a webcam.
-Windows 10/11 should use its Microsoft OS descriptors to associate WinUSB.
-Check Device Manager if the viewer cannot find the device. Look for
+**Installing WinUSB with Zadig is a mandatory first-installation step.**
+Flashing the UF2 alone is not sufficient. The firmware exposes a
+vendor-specific USB interface, not a webcam or serial port.
+With the Pico connected normally (not in BOOTSEL mode), look for
 `Supervision USB video capture`; verify its hardware IDs in Properties >
 Details: **`VID_CAFE`, `PID_4020`, interface 0**. The bootloader drive alone is
 not the capture interface.
 
-If no driver is installed, or an incompatible driver was previously bound:
+Install the capture device's driver as follows:
 
 1. Download Zadig only from [its official site](https://zadig.akeo.ie/).
-2. Run it and enable **Options > List All Devices** if needed.
+2. Run it as administrator and enable **Options > List All Devices** if needed.
 3. Select **Supervision USB video capture** and verify the USB ID is
    **CAFE / 4020**. Stop if the identity does not match.
 4. Choose **WinUSB**, not libusbK, libusb-win32, or USB serial.
@@ -118,14 +120,15 @@ If no driver is installed, or an incompatible driver was previously bound:
 Changing a different device's driver can break that device. Never choose a
 keyboard, mouse, hub, storage drive, or the `RPI-RP2` bootloader. A device
 already working with WinUSB does not need to be changed. The VID/PID are
-prototype identifiers, not a commercial allocation. Zadig is an optional
-external tool, not bundled in this project.
+prototype identifiers, not a commercial allocation. You only need to perform
+this setup once per Windows installation/device binding; you do not need to
+reinstall a working WinUSB driver every time you launch the viewer.
 
 ### First launch and expected result
 
 1. Complete the wiring with power disconnected, then connect the Pico to USB.
 2. Close any other capture viewer; only one application should own the capture
-   interface during this test.
+   interface at a time.
 3. Open `SupervisionViewer.exe`. A waiting/status window is normal while the
    console is off or a complete field history is not yet available.
 4. Turn on the Supervision. Its actual game image should appear.
@@ -142,10 +145,11 @@ process; do not disable protection just to run this project.
 
 ## Wiring and hardware caution
 
-The release firmware uses LINE_LATCH. Solder on the console mainboard rather
-than relying on the failed LCD board connection. Connector numbering below
-follows the Supervision LCD connector; verify orientation and signals on your
-actual board before soldering.
+Eight connections are required, including ground and the LINE_LATCH signal.
+Solder directly to the console mainboard's LCD connector pins; a faulty LCD
+board or its interconnect can degrade the captured signals. Connector
+numbering below follows the Supervision LCD connector; verify orientation
+and signals on your actual board before soldering.
 
 | LCD connector | Pico |
 | --- | --- |
@@ -191,10 +195,10 @@ are submission measurements, not physical scanout measurements.
 
 ## Build the release configuration
 
-Source is taken from the preserved accepted snapshot, not the newer working
-tree. Original C/C++/PIO files are retained without changing capture or
-rendering logic. Historical diagnostic targets in that snapshot are not the
-release firmware. Explicitly use the following configuration:
+The repository contains the Windows application, Pico firmware, shared USB
+protocol definitions and automated tests. Use the following build options
+to enable this release's three-field grayscale reconstruction, low-latency
+USB reads and buffered drawing:
 
 Windows host: Visual Studio Build Tools with Desktop development with C++.
 
@@ -204,16 +208,17 @@ Windows host: Visual Studio Build Tools with Desktop development with C++.
 
 The executable is `build/windows-x64/host/SupervisionViewer.exe`.
 
-Firmware: Pico SDK for Windows, RP2040/Pico toolchain. The accepted binary was
-built using Pico SDK 1.5.1. Build the specific accepted target:
+Firmware: Pico SDK for Windows, RP2040/Pico toolchain. The release firmware
+was built using Pico SDK 1.5.1. Build this target:
 
 ```powershell
 .\scripts\build-firmware.ps1 -Targets supervision_capture_fast_field_handoff
 ```
 
 The artifact is `build/firmware/supervision_capture_fast_field_handoff.uf2`.
-Do not substitute the default `supervision_capture.uf2` or a six-wire/diagnostic
-target: they are different capture implementations.
+This build artifact is packaged as `SupervisionCapture.uf2` in the Windows
+download. Other targets in `firmware/CMakeLists.txt` are alternative or
+diagnostic capture implementations, not the firmware supplied with v0.1.0.
 
 Run host tests with the Visual Studio CTest executable, e.g.:
 
@@ -227,7 +232,7 @@ installation, set `PICO_SDK_PATH` to its `pico-sdk` directory and ensure ARM
 GCC, CMake and Ninja are installed. Initialize the SDK's required submodules.
 
 Rebuilding may change binary hashes due to toolchain versions/build metadata.
-The release assets preserve the already tested binaries; checksums identify
+The release assets contain hardware-tested binaries; checksums identify
 those exact files, not a claim of reproducible bit-for-bit builds.
 
 ## Troubleshooting
@@ -236,11 +241,11 @@ those exact files, not a claim of reproducible bit-for-bit builds.
 | --- | --- |
 | `RPI-RP2` never appears | Hold BOOTSEL while connecting; try a known USB data cable and another port. |
 | Only a bootloader drive appears | Flash the packaged UF2, then reconnect without holding BOOTSEL. |
-| Viewer cannot find/open Pico | Verify CAFE/4020 and WinUSB; close other capture programs; reconnect USB. |
+| Viewer cannot find/open Pico | Complete the required Zadig installation; verify CAFE/4020 and WinUSB; close other capture programs; reconnect USB. |
 | Pico detected, but no game image | Power on console; verify common ground, DATA0–3, CLK, POLARITY and LINE_LATCH at the mainboard; check firmware target. |
-| Diagonals, lines, unstable sync | Recheck pin orientation, LINE_LATCH/GP22, solder joints and wiring; inspect signal integrity and console power. Do not try random firmware variants first. |
+| Diagonals, lines, unstable sync | Recheck pin orientation, LINE_LATCH/GP22, solder joints and wiring; inspect signal integrity and console power. Use the packaged firmware. |
 | Source/drop counters increase continuously | Check power, wiring/signal levels and USB connection; startup/reconnect drops alone are not proof of ongoing loss. |
-| Viewer appears slow/choppy | Check source/USB/gray/paint rates; close other capture apps. Uneven paddle motion is a known remaining limitation; forcing 50 Hz does not guarantee a fix. |
+| Viewer appears slow/choppy | Check source/USB/gray/paint rates; close other capture apps. Uneven motion is a known limitation; changing monitor refresh alone may not resolve it. |
 | PNG cannot be saved | Extract/run from a writable working directory; P writes there, not necessarily beside the EXE if launched from a different directory. |
 | Timing CSV cannot be opened | Exit the viewer normally to flush/close it before reading. |
 
@@ -253,7 +258,7 @@ Raw recordings may contain game content; share only content you may distribute.
 ## Contributing
 
 Fork the repository, make a focused change, and submit a pull request. Keep
-the accepted capture and grayscale behavior as the baseline, add relevant
+the release's capture and grayscale behavior as the baseline, add relevant
 tests, and report real-hardware results separately from synthetic tests.
 Avoid silently adding interpolation, suppressing legitimate game frames, or
 claiming perfect fidelity from a paint-rate counter. No game ROMs are needed

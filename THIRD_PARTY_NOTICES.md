@@ -12,8 +12,8 @@ Copyright (C) 2025 Ruud van Falier, DutchMaker.nl.
 - Upstream license: https://github.com/DutchMaker/Supervision-LCD-v2/blob/main/LICENSE
 - Included full text: `licenses/DutchMaker-NON-COMMERCIAL.txt`.
 - Derived capture implementations: `firmware/src/main_proven.c` (including the
-  accepted fast-field-handoff target) and `firmware/src/main_reference_exact.c`
-  (historical diagnostic target).
+  `supervision_capture_fast_field_handoff` release target) and
+  `firmware/src/main_reference_exact.c` (an alternative capture target).
 
 The project's USB transport, synchronization qualification, queue/handoff,
 Windows viewer and tests extend/adapt the reference work. Original additions
@@ -37,7 +37,7 @@ section is a placeholder; it is not represented as an MIT licensing grant.
 
 Copyright 2020 (c) 2020 Raspberry Pi (Trading) Ltd.
 
-The accepted firmware links against Pico SDK 1.5.1. Full root BSD-3-Clause
+The release firmware links against Pico SDK 1.5.1. Full root BSD-3-Clause
 notice is included as `licenses/Pico-SDK-BSD-3-Clause.txt`. The SDK is an external
 build dependency and is not vendored in this repository.
 
@@ -55,7 +55,8 @@ notice is included as `licenses/TinyUSB-MIT.txt`.
 
 Reference: https://github.com/hathach/tinyusb
 
-Build dependencies, toolchains and optional historical targets may carry
+Build dependencies, toolchains and alternative firmware targets may carry
 additional upstream terms. These notices do not license unrelated third-party
-files or game content. No ROMs, game recordings, user screenshots, account
+files or game content. The included viewer screenshots show game graphics;
+they do not grant rights to that content. No ROMs, game recordings, account
 credentials, or private diagnostic logs are included in this release.
